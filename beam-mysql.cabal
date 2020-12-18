@@ -1,54 +1,252 @@
-name:                 beam-mysql
-version:              0.2.0.0
-synopsis:             Connection layer between beam and MySQL/MariaDB
-description:          Beam driver for MySQL or MariaDB databases, two popular open-source databases.
+cabal-version: 3.0
+name:          beam-mysql
+version:       1.2.1.0
+synopsis:      Connection layer between beam and MySQL/MariaDB
+description:
+  Beam driver for MySQL or MariaDB databases, two popular open-source databases.
+  Supports most beam features, but does not yet have support for "beam-migrate".
 
-                      Supports most beam features, but does not yet have support for "beam-migrate".
-homepage:             https://github.com/tathougies/beam-mysql
-license:              MIT
-license-file:         LICENSE
-author:               Travis Athougies
-maintainer:           travis@athougies.net
-category:             Database
-build-type:           Simple
-cabal-version:        1.18
-bug-reports:          https://github.com/tathougies/beam-mysql/issues
+homepage:      https://github.com/juspay/beam-mysql
+bug-reports:   https://github.com/juspay/beam-mysql/issues
+license:       MIT
+license-file:  LICENSE
+author:        Travis Athougies, Juspay Technologies Pvt Ltd
+maintainer:    koz.ross@retro-freedom.nz
+copyright:
+  (C) Travis Authologies 2018 (C) Juspay Technologies Pvt Ltd 2020
 
-library
-  exposed-modules:    Database.Beam.MySQL
-                      Database.Beam.MySQL.Connection
-                      Database.Beam.MySQL.Syntax
-                      Database.Beam.MySQL.FromField
-  build-depends:      base                 >=4.7  && <5.0,
-                      beam-core            >=0.8  && <0.9,
-
-                      mysql                >=0.1  && <0.2,
-
-                      text                 >=1.0  && <1.3,
-                      bytestring           >=0.10 && <0.11,
-
-                      attoparsec,
-                      aeson                >=0.11 && <1.5,
-                      hashable             >=1.1  && <1.3,
-                      time                 >=1.6  && <1.10,
-                      mtl                  >=2.1  && <2.3,
-                      case-insensitive     >=1.2  && <1.3,
-                      scientific           >=0.3  && <0.4,
-                      free                 >=4.12 && <5.2,
-                      network-uri
-  default-language:   Haskell2010
-  default-extensions: ScopedTypeVariables, OverloadedStrings, MultiParamTypeClasses, RankNTypes, FlexibleInstances,
-                      DeriveDataTypeable, DeriveGeneric, StandaloneDeriving, TypeFamilies, GADTs, OverloadedStrings,
-                      CPP, TypeApplications, FlexibleContexts
-  ghc-options:        -Wall
-  if flag(werror)
-    ghc-options:       -Werror
-
-flag werror
-  description: Enable -Werror during development
-  default:     False
-  manual:      True
+category:      Database
+build-type:    Simple
+tested-with:   GHC ==8.8.3
 
 source-repository head
-  type: git
-  location: https://github.com/tathougies/beam-mysql.git
+  type:     git
+  location: https://github.com/juspay/beam-mysql 
+
+-- Common sections
+
+common common-lang
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wredundant-constraints -Werror
+    -fplugin=RecordDotPreprocessor
+
+  build-depends:
+    , base                     >=4.13     && <5
+    , beam-core                ^>=0.9.0.0
+    , generics-sop             ^>=0.5.1.0
+    , mysql-haskell            ^>=0.8.4.2
+    , record-dot-preprocessor  ^>=0.2.7
+    , record-hasfield          ^>=1.0
+    , safe-exceptions          ^>=0.1.7.0
+    , text                     ^>=1.2.4.0
+    , unordered-containers     ^>=0.2.10.0
+
+  default-extensions:
+    DataKinds
+    DeriveFunctor
+    DeriveGeneric
+    DerivingStrategies
+    DuplicateRecordFields
+    EmptyCase
+    FlexibleContexts
+    FlexibleInstances
+    GeneralizedNewtypeDeriving
+    InstanceSigs
+    LambdaCase
+    MultiParamTypeClasses
+    OverloadedStrings
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeSynonymInstances
+    UndecidableInstances
+
+  default-language:   Haskell2010
+
+common common-bench
+  import:        common-lang
+  ghc-options:   -O2 -threaded -with-rtsopts=-N
+  build-depends:
+    , beam-mysql
+    , criterion   ^>=1.5.6.2
+    , fmt
+    , mysql-temp
+
+common common-test
+  import:         common-lang
+  ghc-options:    -O2 -threaded -with-rtsopts=-N
+  build-depends:
+    , beam-mysql
+    , hspec       ^>=2.7.1
+    , mysql-temp
+
+  hs-source-dirs: test
+
+-- Flags
+
+flag lenient
+  description: Be lenient when decoding (see LENIENT.md for description).
+  default:     False
+
+-- Libraries
+
+library
+  import:          common-lang
+  exposed-modules: Database.Beam.MySQL
+  other-modules:
+    Data.FakeUTC
+    Data.ViaJson
+    Database.Beam.MySQL.Connection
+    Database.Beam.MySQL.Extra
+    Database.Beam.MySQL.FromField
+    Database.Beam.MySQL.Syntax
+    Database.Beam.MySQL.Syntax.DataType
+    Database.Beam.MySQL.Syntax.Delete
+    Database.Beam.MySQL.Syntax.Insert
+    Database.Beam.MySQL.Syntax.Misc
+    Database.Beam.MySQL.Syntax.Render
+    Database.Beam.MySQL.Syntax.Select
+    Database.Beam.MySQL.Syntax.Update
+    Database.Beam.MySQL.Syntax.Value
+    Database.Beam.MySQL.Utils
+
+  build-depends:
+    , aeson            >=1.4.7.1
+    , binary           ^>=0.8.7.0
+    , bytestring       ^>=0.10.10.0
+    , fmt              ^>=0.6.1.2
+    , free             ^>=5.1.3
+    , hashable         ^>=1.3.0.0
+    , int-cast         ^>=0.2.0.0
+    , io-streams       ^>=1.5.1.0
+    , mason            ^>=0.2.3
+    , mtl              ^>=2.2.2
+    , mysql-haskell    ^>=0.8.4.2
+    , safe-exceptions  ^>=0.1.7.0
+    , scientific       ^>=0.3.6.2
+    , text             ^>=1.2.4.0
+    , time             ^>=1.9.3
+    , vector           ^>=0.12.1.2
+
+  if flag(lenient)
+    cpp-options: -DLENIENT
+
+  hs-source-dirs:  src
+
+library mysql-temp
+  import:          common-lang
+  visibility:      private
+  exposed-modules: Database.MySQL.Temp
+  build-depends:
+    , directory      ^>=1.3.6.0
+    , filepath       ^>=1.4.2.1
+    , fmt
+    , random         ^>=1.1
+    , typed-process  ^>=0.2.6.0
+    , unix           ^>=2.7.2.2
+
+  hs-source-dirs:  temp-db
+
+test-suite gen-select
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  hs-source-dirs: test/gen-select
+
+test-suite gen-insert
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  hs-source-dirs: test/gen-insert
+
+test-suite nullable
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  build-depends:
+    , bytestring
+    , directory        ^>=1.3.6.0
+    , filepath         ^>=1.4.2.1
+    , fmt
+    , mysql-haskell
+    , random           ^>=1.1
+    , safe-exceptions
+    , text
+    , typed-process    ^>=0.2.6.0
+    , unix             ^>=2.7.2.2
+
+  hs-source-dirs: test/nullable
+
+test-suite via-json
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  build-depends:
+    , aeson
+    , QuickCheck            ^>=2.13.2
+    , quickcheck-instances  ^>=0.3.22
+
+  hs-source-dirs: test/via-json
+
+test-suite text-escaping
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  build-depends:  aeson
+  hs-source-dirs: test/text-escaping
+
+test-suite bobby-tables
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  hs-source-dirs: test/bobby-tables
+
+test-suite unicode
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  build-depends:  vector
+  hs-source-dirs: test/unicode
+
+test-suite run-insert-returning
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  hs-source-dirs: test/run-insert-returning
+
+test-suite bad-schemata
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  hs-source-dirs: test/bad-schemata
+
+  if flag(lenient)
+    buildable: False
+
+test-suite leniency
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  build-depends:
+    , ieee754  ^>=0.8.0
+    , vector
+
+  hs-source-dirs: test/leniency
+
+  if !flag(lenient)
+    buildable: False
+
+-- Benchmarks
+
+benchmark insert
+  import:         common-bench
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  hs-source-dirs: bench/insert
+
+benchmark select
+  import:         common-bench
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  hs-source-dirs: bench/select
